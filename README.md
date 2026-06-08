@@ -8,7 +8,7 @@ AI Invoice Maker adalah aplikasi web invoice modern untuk jasa automation, web d
   <tr>
     <td width="50%">
       <h3>Dashboard</h3>
-      <img src="public/screenshots/ss1png" alt="Dashboard Preview" />
+      <img src="public/screenshots/ss1.png" alt="Dashboard Preview" />
     </td>
     <td width="50%">
       <h3>Create Invoice</h3>
