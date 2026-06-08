@@ -1,7 +1,7 @@
-import { getInvoices } from "../utils/storage";
+import { syncOverdueInvoices } from "../utils/storage";
 
 function Dashboard() {
-  const invoices = getInvoices();
+  const invoices = syncOverdueInvoices();
 
   const totalInvoices = invoices.length;
 

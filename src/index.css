@@ -171,8 +171,18 @@ button:hover {
 }
 
 .history-toolbar {
-  max-width: 480px;
+  display: flex;
+  gap: 14px;
+  max-width: 720px;
   margin-bottom: 20px;
+}
+
+.history-toolbar input {
+  flex: 1;
+}
+
+.history-toolbar select {
+  max-width: 180px;
 }
 
 .table-card {
@@ -450,4 +460,31 @@ td {
 .small-link-btn {
   padding: 8px 12px;
   font-size: 13px;
+}
+
+.secondary-small {
+  background: #d4af37;
+  color: #0b1f3a;
+}
+
+.secondary-small:hover {
+  background: #b9952e;
+  color: #0b1f3a;
+}
+
+.export-btn {
+  margin-top: 0;
+  white-space: nowrap;
+  background: #0b1f3a;
+}
+
+.import-btn {
+  margin-top: 0;
+  white-space: nowrap;
+  background: #d4af37;
+  color: #0b1f3a;
+  border-radius: 10px;
+  padding: 13px 18px;
+  font-weight: 700;
+  cursor: pointer;
 }
