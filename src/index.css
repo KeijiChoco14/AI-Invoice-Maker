@@ -1676,3 +1676,78 @@ button:disabled,
     margin: 8mm;
   }
 }
+
+/* === Unified action button system === */
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  text-decoration: none;
+  transition: background 0.18s, border-color 0.18s;
+  margin-top: 0;
+  white-space: nowrap;
+}
+
+.btn-icon i {
+  font-size: 14px;
+}
+
+/* Ghost — navigasi & aksi sekunder */
+.btn-ghost-outline {
+  background: transparent;
+  color: var(--btn-ghost-color, #374151);
+  border-color: #d1d5db;
+}
+.btn-ghost-outline:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+/* Gold — aksi utama / highlight */
+.btn-gold-solid {
+  background: #d4af37;
+  color: #0b1f3a;
+  border-color: #d4af37;
+}
+.btn-gold-solid:hover {
+  background: #b9952e;
+  border-color: #b9952e;
+  color: #0b1f3a;
+}
+
+/* Dark — download / CTA kuat */
+.btn-dark-solid {
+  background: #0b1f3a;
+  color: #fff;
+  border-color: #0b1f3a;
+}
+.btn-dark-solid:hover {
+  background: #132f56;
+  border-color: #132f56;
+}
+
+/* Green soft — lunas / WhatsApp */
+.btn-green-soft {
+  background: #dcfce7;
+  color: #166534;
+  border-color: #86efac;
+}
+.btn-green-soft:hover {
+  background: #bbf7d0;
+}
+
+/* Red soft — hapus */
+.btn-red-soft {
+  background: #fee2e2;
+  color: #991b1b;
+  border-color: #fca5a5;
+}
+.btn-red-soft:hover {
+  background: #fecaca;
+}

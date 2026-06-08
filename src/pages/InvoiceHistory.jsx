@@ -164,7 +164,7 @@ function InvoiceHistory() {
 
         <button
           type="button"
-          className="small-btn"
+          className="btn-icon btn-ghost-outline"
           onClick={() => {
             setSearch("");
             setStatusFilter("All");
@@ -172,6 +172,7 @@ function InvoiceHistory() {
             setDateTo("");
           }}
         >
+          <i className="ti ti-x" aria-hidden="true" />
           Reset
         </button>
 
@@ -188,16 +189,18 @@ function InvoiceHistory() {
 
         <button
           type="button"
-          className="export-btn"
+          className="btn-icon btn-dark-solid"
           onClick={() => {
             exportInvoicesToJSON();
             toast.success("Backup JSON berhasil diunduh.");
           }}
         >
+          <i className="ti ti-download" aria-hidden="true" />
           Export JSON
         </button>
 
-        <label className="import-btn">
+        <label className="btn-icon btn-gold-solid">
+          <i className="ti ti-upload" aria-hidden="true" />
           Import JSON
           <input
             type="file"
@@ -251,48 +254,57 @@ function InvoiceHistory() {
                   <td>
                     <div className="action-buttons">
                       <Link
-                        className="small-link-btn"
+                        className="btn-icon btn-gold-solid"
                         to={`/invoice/${invoice.invoiceNumber}`}
                       >
+                        <i className="ti ti-eye" aria-hidden="true" />
                         Detail
                       </Link>
 
                       <Link
-                        className="small-link-btn"
+                        className="btn-icon btn-ghost-outline"
                         to={`/invoice/${invoice.invoiceNumber}/edit`}
                       >
+                        <i className="ti ti-pencil" aria-hidden="true" />
                         Edit
                       </Link>
 
                       <button
-                        className="small-btn whatsapp-small"
+                        className="btn-icon btn-green-soft"
                         onClick={() => shareInvoiceToWhatsApp(invoice)}
                       >
-                        WhatsApp
+                        <i
+                          className="ti ti-brand-whatsapp"
+                          aria-hidden="true"
+                        />
+                        WA
                       </button>
 
                       <button
-                        className="small-btn"
+                        className="btn-icon btn-dark-solid"
                         onClick={() => generateInvoicePDF(invoice)}
                       >
+                        <i className="ti ti-file-type-pdf" aria-hidden="true" />
                         PDF
                       </button>
 
                       <button
-                        className="small-btn secondary-small"
+                        className="btn-icon btn-ghost-outline"
                         onClick={() =>
                           handleDuplicateInvoice(invoice.invoiceNumber)
                         }
                       >
-                        Duplicate
+                        <i className="ti ti-copy" aria-hidden="true" />
+                        Duplikat
                       </button>
 
                       <button
-                        className="small-btn danger-small"
+                        className="btn-icon btn-red-soft"
                         onClick={() =>
                           handleDeleteInvoice(invoice.invoiceNumber)
                         }
                       >
+                        <i className="ti ti-trash" aria-hidden="true" />
                         Hapus
                       </button>
                     </div>

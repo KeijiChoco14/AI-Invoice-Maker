@@ -59,44 +59,53 @@ function InvoiceDetail() {
         </div>
 
         <div className="action-buttons">
-          <Link className="link-btn" to="/history">
+          <Link className="btn-icon btn-ghost-outline" to="/history">
+            <i className="ti ti-arrow-left" aria-hidden="true" />
             Kembali
           </Link>
 
           <Link
-            className="link-btn"
+            className="btn-icon btn-ghost-outline"
             to={`/invoice/${invoice.invoiceNumber}/edit`}
           >
+            <i className="ti ti-pencil" aria-hidden="true" />
             Edit
           </Link>
 
           {invoice.status !== "Paid" && (
             <button
               type="button"
-              className="paid-btn"
+              className="btn-icon btn-green-soft"
               onClick={handleMarkAsPaid}
             >
+              <i className="ti ti-circle-check" aria-hidden="true" />
               Tandai Lunas
             </button>
           )}
 
           <button
             type="button"
-            className="print-btn"
+            className="btn-icon btn-ghost-outline"
             onClick={handlePrintInvoice}
           >
-            Print Invoice
+            <i className="ti ti-printer" aria-hidden="true" />
+            Print
           </button>
 
-          <button onClick={() => generateInvoicePDF(invoice)}>
+          <button
+            className="btn-icon btn-dark-solid"
+            onClick={() => generateInvoicePDF(invoice)}
+          >
+            <i className="ti ti-download" aria-hidden="true" />
             Download PDF
           </button>
 
           <button
-            className="whatsapp-btn"
+            className="btn-icon btn-green-soft"
             onClick={() => shareInvoiceToWhatsApp(invoice)}
           >
-            Share via WhatsApp
+            <i className="ti ti-brand-whatsapp" aria-hidden="true" />
+            Share WA
           </button>
         </div>
       </div>
