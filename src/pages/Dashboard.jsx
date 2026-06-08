@@ -69,7 +69,7 @@ function Dashboard() {
           <h1>Kelola invoice jasa digital kamu lebih cepat.</h1>
           <p>
             Buat invoice dari natural language, kelola status pembayaran, dan
-            download PDF profesional dengan branding navy-gold.
+            download PDF profesional.
           </p>
 
           <div className="hero-actions">
