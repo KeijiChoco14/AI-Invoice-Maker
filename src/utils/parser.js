@@ -8,74 +8,68 @@ function addDays(days) {
   return date.toISOString().split("T")[0];
 }
 
-function removeContactSections(text) {
-  return text
-    .replace(/email\s*[:\-]?\s*[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, "")
-    .replace(/(?:telepon|telp|phone|wa)\s*[:\-]?\s*[\d+\-\s]+/gi, "")
-    .replace(/(?:jatuh tempo|due in|due)\s*\d+\s*(?:hari|days?)/gi, "");
+function getField(text, labels) {
+  for (const label of labels) {
+    const regex = new RegExp(`${label}\\s*[:\\-]\\s*(.+)`, "i");
+    const match = text.match(regex);
+    if (match) return match[1].trim();
+  }
+  return "";
 }
 
-export function parseInvoiceText(text) {
-  const emailMatch = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
-
-  const phoneMatch = text.match(
-    /(?:telepon|telp|phone|wa)\s*[:\-]?\s*([\d+\-\s]+)/i
-  );
-
-  const clientMatch =
-    text.match(/(?:untuk|kepada|for|client|klien|customer)\s+([^,]+)/i);
-
-  const addressMatch =
-    text.match(
-      /alamat\s*[:\-]?\s*(.*?)(?=email|telepon|telp|phone|wa|jasa|service|jatuh tempo|due|$)/i
-    ) ||
-    text.match(/address\s*[:\-]?\s*(.*?)(?=email|phone|service|due|$)/i);
-
-  const dueMatch = text.match(
-    /(?:jatuh tempo|due in|due)\s*(\d+)\s*(?:hari|days?)/i
-  );
-
-  const dueDate = dueMatch ? addDays(dueMatch[1]) : "";
-
-  const itemSource = removeContactSections(text);
-
-  const itemPattern =
-    /(?:jasa|layanan|service)?\s*([^,.]+?)\s+(?:rp|idr)\s*([\d.]{4,})(?=,|\.| dan | and |$)/gi;
-
+function parseStructuredItems(text) {
+  const lines = text.split("\n");
   const items = [];
-  let match;
 
-  while ((match = itemPattern.exec(itemSource)) !== null) {
-    let description = match[1]
-      .replace(/buat invoice untuk/gi, "")
-      .replace(/create invoice for/gi, "")
-      .replace(clientMatch?.[1] || "", "")
-      .replace(/alamat\s*[:\-]?/gi, "")
-      .replace(addressMatch?.[1] || "", "")
-      .replace(/^(dan|and)\s+/i, "")
-      .trim();
+  lines.forEach((line) => {
+    const cleanLine = line.trim();
 
-    const unitPrice = cleanPrice(match[2]);
+    if (!cleanLine.startsWith("-")) return;
 
-    if (description && unitPrice > 0) {
+    const content = cleanLine.replace("-", "").trim();
+    const [description, price] = content.split("|").map((item) => item.trim());
+
+    if (description && price) {
       items.push({
         description,
         quantity: 1,
-        unitPrice,
+        unitPrice: cleanPrice(price),
       });
     }
+  });
+
+  return items;
+}
+
+function parseDueDate(text) {
+  const dueText = getField(text, ["Due", "Jatuh Tempo"]);
+
+  if (!dueText) return "";
+
+  const dayMatch = dueText.match(/(\d+)\s*(days?|hari)/i);
+
+  if (dayMatch) {
+    return addDays(dayMatch[1]);
   }
 
+  const dateMatch = dueText.match(/\d{4}-\d{2}-\d{2}/);
+
+  return dateMatch ? dateMatch[0] : "";
+}
+
+export function parseInvoiceText(text) {
+  const structuredItems = parseStructuredItems(text);
+
   return {
-    clientName: clientMatch ? clientMatch[1].trim() : "",
-    clientEmail: emailMatch ? emailMatch[0] : "",
-    clientPhone: phoneMatch ? phoneMatch[1].trim() : "",
-    clientAddress: addressMatch ? addressMatch[1].trim().replace(/,$/, "") : "",
-    dueDate,
+    clientName: getField(text, ["Client", "Klien", "Customer", "Nama Klien"]),
+    clientEmail: getField(text, ["Email"]),
+    clientPhone: getField(text, ["Phone", "Telepon", "Telp", "WA"]),
+    clientAddress: getField(text, ["Address", "Alamat"]),
+    dueDate: parseDueDate(text),
     notes: text,
     items:
-      items.length > 0
-        ? items
+      structuredItems.length > 0
+        ? structuredItems
         : [{ description: "Jasa layanan digital", quantity: 1, unitPrice: 0 }],
   };
 }

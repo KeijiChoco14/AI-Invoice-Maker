@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { syncOverdueInvoices } from "../utils/storage";
 
 function Dashboard() {
@@ -5,14 +6,14 @@ function Dashboard() {
 
   const totalInvoices = invoices.length;
 
-  const totalRevenue = invoices.reduce((sum, invoice) => {
-    return sum + Number(invoice.grandTotal || 0);
-  }, 0);
+  const totalRevenue = invoices.reduce(
+    (sum, invoice) => sum + Number(invoice.grandTotal || 0),
+    0
+  );
 
   const paidInvoices = invoices.filter((invoice) => invoice.status === "Paid");
   const unpaidInvoices = invoices.filter((invoice) => invoice.status === "Unpaid");
   const overdueInvoices = invoices.filter((invoice) => invoice.status === "Overdue");
-  const draftInvoices = invoices.filter((invoice) => invoice.status === "Draft");
 
   const formatRupiah = (number) =>
     new Intl.NumberFormat("id-ID", {
@@ -25,80 +26,106 @@ function Dashboard() {
 
   return (
     <div>
-      <h1>Dashboard</h1>
-      <p className="subtitle">
-        Ringkasan performa invoice dan status pembayaran.
-      </p>
+      <section className="hero-dashboard">
+        <div>
+          <span className="eyebrow">AI Invoice Workspace</span>
+          <h1>Kelola invoice jasa digital kamu lebih cepat.</h1>
+          <p>
+            Buat invoice dari natural language, kelola status pembayaran,
+            dan download PDF profesional dengan branding navy-gold.
+          </p>
 
-      <div className="stats-grid">
-        <div className="stat-card">
-          <span>Total Invoice</span>
-          <strong>{totalInvoices}</strong>
+          <div className="hero-actions">
+            <Link to="/create" className="primary-action">
+              + Buat Invoice
+            </Link>
+            <Link to="/history" className="ghost-action">
+              Lihat Riwayat
+            </Link>
+          </div>
         </div>
 
-        <div className="stat-card">
+        <div className="hero-panel">
           <span>Total Nilai Invoice</span>
           <strong>{formatRupiah(totalRevenue)}</strong>
+          <p>{totalInvoices} invoice tersimpan</p>
+        </div>
+      </section>
+
+      <div className="stats-grid modern">
+        <div className="stat-card ai-card">
+          <span>Total Invoice</span>
+          <strong>{totalInvoices}</strong>
+          <p>Semua invoice</p>
         </div>
 
-        <div className="stat-card">
-          <span>Paid</span>
-          <strong>{paidInvoices.length}</strong>
-        </div>
-
-        <div className="stat-card">
-          <span>Unpaid</span>
+        <div className="stat-card ai-card">
+          <span>Belum Dibayar</span>
           <strong>{unpaidInvoices.length}</strong>
+          <p>{formatRupiah(unpaidInvoices.reduce((s, i) => s + Number(i.grandTotal || 0), 0))}</p>
         </div>
 
-        <div className="stat-card">
-          <span>Overdue</span>
+        <div className="stat-card ai-card danger-stat">
+          <span>Tertunggak</span>
           <strong>{overdueInvoices.length}</strong>
+          <p>{formatRupiah(overdueInvoices.reduce((s, i) => s + Number(i.grandTotal || 0), 0))}</p>
         </div>
 
-        <div className="stat-card">
-          <span>Draft</span>
-          <strong>{draftInvoices.length}</strong>
+        <div className="stat-card ai-card success-stat">
+          <span>Lunas</span>
+          <strong>{paidInvoices.length}</strong>
+          <p>{formatRupiah(paidInvoices.reduce((s, i) => s + Number(i.grandTotal || 0), 0))}</p>
         </div>
       </div>
 
-      <div className="table-card mt-24">
-        <h2>Invoice Terbaru</h2>
+      <section className="recent-section">
+        <div className="section-header">
+          <div>
+            <h2>Invoice Terbaru</h2>
+            <p>Invoice paling baru yang kamu buat.</p>
+          </div>
 
-        <table>
-          <thead>
-            <tr>
-              <th>Nomor</th>
-              <th>Klien</th>
-              <th>Status</th>
-              <th>Total</th>
-            </tr>
-          </thead>
+          <Link to="/history" className="small-link-btn">
+            Lihat Semua
+          </Link>
+        </div>
 
-          <tbody>
-            {recentInvoices.length > 0 ? (
-              recentInvoices.map((invoice, index) => (
-                <tr key={index}>
-                  <td>{invoice.invoiceNumber}</td>
-                  <td>{invoice.clientName}</td>
-                  <td>
-                    <span className={`status ${invoice.status?.toLowerCase()}`}>
-                      {invoice.status}
-                    </span>
-                  </td>
-                  <td>{formatRupiah(invoice.grandTotal)}</td>
-                </tr>
-              ))
-            ) : (
+        <div className="table-card modern-table">
+          <table>
+            <thead>
               <tr>
-                <td colSpan="4" className="empty-table">
-                  Belum ada invoice.
-                </td>
+                <th>Nomor</th>
+                <th>Klien</th>
+                <th>Status</th>
+                <th>Total</th>
               </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+
+            <tbody>
+              {recentInvoices.length > 0 ? (
+                recentInvoices.map((invoice, index) => (
+                  <tr key={index}>
+                    <td>{invoice.invoiceNumber}</td>
+                    <td>{invoice.clientName}</td>
+                    <td>
+                      <span className={`status ${invoice.status?.toLowerCase()}`}>
+                        {invoice.status}
+                      </span>
+                    </td>
+                    <td>{formatRupiah(invoice.grandTotal)}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="4" className="empty-table">
+                    Belum ada invoice.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
     </div>
   );
 }
