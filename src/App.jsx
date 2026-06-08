@@ -6,6 +6,8 @@ import Settings from "./pages/Settings";
 import InvoiceDetail from "./pages/InvoiceDetail";
 import EditInvoice from "./pages/EditInvoice";
 import "./index.css";
+import logo from "./assets/logo.png";
+import { Toaster } from "react-hot-toast";
 
 function App() {
   return (
@@ -13,9 +15,14 @@ function App() {
       <div className="app">
         <aside className="sidebar">
           <div className="brand">
-            <div className="brand-icon">AI</div>
+            <img
+              src={logo}
+              alt="AI Invoice Maker Logo"
+              className="brand-logo"
+            />
+
             <div>
-              <h2>InvoiceAI</h2>
+              <h2>AI Invoice Maker</h2>
               <p>Smart Billing Studio</p>
             </div>
           </div>
@@ -47,6 +54,23 @@ function App() {
           </Routes>
         </main>
       </div>
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 2500,
+          style: {
+            background: "#0B1F3A",
+            color: "#FFFFFF",
+            border: "1px solid rgba(212, 175, 55, 0.35)",
+          },
+          success: {
+            iconTheme: {
+              primary: "#D4AF37",
+              secondary: "#0B1F3A",
+            },
+          },
+        }}
+      />
     </BrowserRouter>
   );
 }

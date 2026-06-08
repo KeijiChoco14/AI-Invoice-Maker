@@ -1,11 +1,19 @@
 import { Link, useParams } from "react-router-dom";
-import { getInvoiceByNumber, getSettings } from "../utils/storage";
+import {
+  getInvoiceByNumber,
+  getSettings,
+  updateInvoiceStatus,
+} from "../utils/storage";
 import { generateInvoicePDF } from "../utils/pdfGenerator";
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import { shareInvoiceToWhatsApp } from "../utils/whatsapp";
 
 function InvoiceDetail() {
   const { invoiceNumber } = useParams();
   const invoice = getInvoiceByNumber(invoiceNumber);
   const settings = getSettings();
+  const navigate = useNavigate();
 
   const formatRupiah = (number) =>
     new Intl.NumberFormat("id-ID", {
@@ -17,16 +25,35 @@ function InvoiceDetail() {
   if (!invoice) {
     return (
       <div>
-        <h1>Invoice tidak ditemukan</h1>
-        <Link to="/history">Kembali ke Riwayat</Link>
+        <section className="page-hero compact">
+          <span className="eyebrow">Invoice Preview</span>
+          <h1>Invoice tidak ditemukan</h1>
+          <p>Data invoice yang kamu cari tidak tersedia.</p>
+        </section>
+
+        <Link className="link-btn" to="/history">
+          Kembali ke Riwayat
+        </Link>
       </div>
     );
   }
 
+  const handleMarkAsPaid = () => {
+    updateInvoiceStatus(invoice.invoiceNumber, "Paid");
+    toast.success("Invoice berhasil ditandai lunas.");
+    navigate(`/invoice/${invoice.invoiceNumber}`);
+    window.location.reload();
+  };
+
+  const handlePrintInvoice = () => {
+    window.print();
+  };
+
   return (
     <div>
-      <div className="detail-header">
+      <div className="detail-header premium-detail-header">
         <div>
+          <span className="eyebrow dark">Invoice Preview</span>
           <h1>Preview Invoice</h1>
           <p className="subtitle">{invoice.invoiceNumber}</p>
         </div>
@@ -43,15 +70,41 @@ function InvoiceDetail() {
             Edit
           </Link>
 
+          {invoice.status !== "Paid" && (
+            <button
+              type="button"
+              className="paid-btn"
+              onClick={handleMarkAsPaid}
+            >
+              Tandai Lunas
+            </button>
+          )}
+
+          <button
+            type="button"
+            className="print-btn"
+            onClick={handlePrintInvoice}
+          >
+            Print Invoice
+          </button>
+
           <button onClick={() => generateInvoicePDF(invoice)}>
             Download PDF
+          </button>
+
+          <button
+            className="whatsapp-btn"
+            onClick={() => shareInvoiceToWhatsApp(invoice)}
+          >
+            Share via WhatsApp
           </button>
         </div>
       </div>
 
-      <div className="invoice-preview">
+      <div className="invoice-preview premium-preview">
         <div className="preview-top">
           <div>
+            <span className="preview-badge">Navy Gold Invoice</span>
             <h2>{settings.companyName}</h2>
             <p>{settings.tagline}</p>
           </div>
@@ -63,7 +116,7 @@ function InvoiceDetail() {
         </div>
 
         <div className="preview-info-grid">
-          <div>
+          <div className="preview-info-card">
             <h3>Ditagihkan Kepada</h3>
             <strong>{invoice.clientName}</strong>
             <p>{invoice.clientEmail || "-"}</p>
@@ -71,7 +124,7 @@ function InvoiceDetail() {
             <p>{invoice.clientAddress || "-"}</p>
           </div>
 
-          <div>
+          <div className="preview-info-card">
             <h3>Dari</h3>
             <strong>{settings.companyName}</strong>
             <p>{settings.email}</p>
@@ -79,60 +132,69 @@ function InvoiceDetail() {
             <p>{settings.address}</p>
           </div>
 
-          <div>
+          <div className="preview-info-card">
             <h3>Detail Invoice</h3>
             <p>Tanggal: {invoice.invoiceDate || "-"}</p>
             <p>Jatuh Tempo: {invoice.dueDate || "-"}</p>
-            <p>Status: {invoice.status}</p>
+            <p>
+              Status:{" "}
+              <span className={`status ${invoice.status?.toLowerCase()}`}>
+                {invoice.status}
+              </span>
+            </p>
           </div>
         </div>
 
-        <table className="preview-table">
-          <thead>
-            <tr>
-              <th>Deskripsi</th>
-              <th>Qty</th>
-              <th>Harga</th>
-              <th>Total</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {invoice.items.map((item, index) => (
-              <tr key={index}>
-                <td>{item.description}</td>
-                <td>{item.quantity}</td>
-                <td>{formatRupiah(item.unitPrice)}</td>
-                <td>{formatRupiah(item.quantity * item.unitPrice)}</td>
+        <div className="preview-table-wrap">
+          <table className="preview-table">
+            <thead>
+              <tr>
+                <th>Deskripsi</th>
+                <th>Qty</th>
+                <th>Harga</th>
+                <th>Total</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
 
-        <div className="preview-summary">
-          <div>
-            <span>Subtotal</span>
-            <strong>{formatRupiah(invoice.subtotal)}</strong>
-          </div>
-
-          <div>
-            <span>
-              {invoice.taxLabel} {invoice.taxRate}%
-            </span>
-            <strong>{formatRupiah(invoice.taxAmount)}</strong>
-          </div>
-
-          <div className="preview-grand-total">
-            <span>Grand Total</span>
-            <strong>{formatRupiah(invoice.grandTotal)}</strong>
-          </div>
+            <tbody>
+              {invoice.items.map((item, index) => (
+                <tr key={index}>
+                  <td>{item.description}</td>
+                  <td>{item.quantity}</td>
+                  <td>{formatRupiah(item.unitPrice)}</td>
+                  <td>{formatRupiah(item.quantity * item.unitPrice)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
 
-        <div className="preview-payment">
-          <h3>Informasi Pembayaran</h3>
-          <p>Bank: {settings.bankName}</p>
-          <p>No. Rekening: {settings.bankAccount}</p>
-          <p>Atas Nama: {settings.bankHolder}</p>
+        <div className="preview-bottom-grid">
+          <div className="preview-payment">
+            <h3>Informasi Pembayaran</h3>
+            <p>Bank: {settings.bankName}</p>
+            <p>No. Rekening: {settings.bankAccount}</p>
+            <p>Atas Nama: {settings.bankHolder}</p>
+          </div>
+
+          <div className="preview-summary premium-summary">
+            <div>
+              <span>Subtotal</span>
+              <strong>{formatRupiah(invoice.subtotal)}</strong>
+            </div>
+
+            <div>
+              <span>
+                {invoice.taxLabel} {invoice.taxRate}%
+              </span>
+              <strong>{formatRupiah(invoice.taxAmount)}</strong>
+            </div>
+
+            <div className="preview-grand-total">
+              <span>Grand Total</span>
+              <strong>{formatRupiah(invoice.grandTotal)}</strong>
+            </div>
+          </div>
         </div>
 
         <div className="preview-footer">

@@ -1,4 +1,5 @@
 import jsPDF from "jspdf";
+import logo from "../assets/logo.png";
 import { getSettings } from "./storage";
 
 const formatRupiah = (number) =>
@@ -10,151 +11,231 @@ const formatRupiah = (number) =>
 
 export function generateInvoicePDF(invoice) {
   const settings = getSettings();
-  const doc = new jsPDF();
+  const doc = new jsPDF("p", "mm", "a4");
 
   const navy = "#0B1F3A";
   const gold = "#D4AF37";
+  const text = "#1F2937";
   const gray = "#6B7280";
+  const lightGray = "#F5F7FA";
+  const border = "#E5E7EB";
 
+  // HEADER
   doc.setFillColor(navy);
-  doc.rect(0, 0, 210, 38, "F");
+  doc.rect(0, 0, 210, 44, "F");
+
+  try {
+    doc.addImage(logo, "PNG", 14, 9, 24, 24);
+  } catch {
+    // Logo gagal dimuat, PDF tetap dibuat.
+  }
 
   doc.setTextColor(gold);
-  doc.setFontSize(22);
-  doc.text(settings.companyName, 14, 18);
-
-  doc.setTextColor("#FFFFFF");
-  doc.setFontSize(10);
-  doc.text(settings.tagline, 14, 26);
-
-  doc.setTextColor("#FFFFFF");
   doc.setFontSize(18);
-  doc.text("INVOICE", 160, 20);
+  doc.setFont("helvetica", "bold");
+  doc.text(settings.companyName || "AI Invoice Maker", 43, 18);
+
+  doc.setTextColor("#FFFFFF");
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.text(settings.tagline || "Smart Billing Studio", 43, 26);
+
+  doc.setTextColor(gold);
+  doc.setFontSize(24);
+  doc.setFont("helvetica", "bold");
+  doc.text("INVOICE", 160, 18);
+
+  doc.setTextColor("#FFFFFF");
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.text(invoice.invoiceNumber || "-", 160, 27);
+
+  // META BOX
+  doc.setFillColor(lightGray);
+  doc.roundedRect(14, 54, 182, 25, 3, 3, "F");
+
+  doc.setTextColor(gray);
+  doc.setFontSize(9);
+  doc.text("Nomor Invoice", 20, 64);
+  doc.text("Tanggal", 78, 64);
+  doc.text("Jatuh Tempo", 128, 64);
+
+  doc.setTextColor(navy);
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "bold");
+  doc.text(invoice.invoiceNumber || "-", 20, 72);
+  doc.text(invoice.invoiceDate || "-", 78, 72);
+  doc.text(invoice.dueDate || "-", 128, 72);
+
+  // CLIENT & COMPANY BOXES
+  const boxY = 90;
+
+  doc.setDrawColor(border);
+  doc.setFillColor("#FFFFFF");
+  doc.roundedRect(14, boxY, 86, 48, 3, 3, "FD");
+  doc.roundedRect(110, boxY, 86, 48, 3, 3, "FD");
+
+  doc.setTextColor(gold);
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "bold");
+  doc.text("DITAGIHKAN KEPADA", 20, boxY + 9);
+  doc.text("DARI", 116, boxY + 9);
 
   doc.setTextColor(navy);
   doc.setFontSize(11);
-  doc.text(`Nomor: ${invoice.invoiceNumber}`, 14, 52);
-  doc.text(`Tanggal: ${invoice.invoiceDate || "-"}`, 14, 60);
-  doc.text(`Jatuh Tempo: ${invoice.dueDate || "-"}`, 14, 68);
+  doc.text(invoice.clientName || "-", 20, boxY + 18);
+  doc.text(settings.companyName || "-", 116, boxY + 18);
 
   doc.setTextColor(gray);
-  doc.text("Ditagihkan kepada:", 14, 84);
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
 
-  doc.setTextColor(navy);
-  doc.setFontSize(13);
-  doc.text(invoice.clientName || "-", 14, 93);
-
-  doc.setFontSize(10);
-  doc.setTextColor(gray);
-
-  let clientY = 101;
+  let clientY = boxY + 26;
 
   if (invoice.clientEmail) {
-    doc.text(invoice.clientEmail, 14, clientY);
-    clientY += 8;
+    doc.text(invoice.clientEmail, 20, clientY);
+    clientY += 6;
   }
 
   if (invoice.clientPhone) {
-    doc.text(invoice.clientPhone, 14, clientY);
-    clientY += 8;
+    doc.text(invoice.clientPhone, 20, clientY);
+    clientY += 6;
   }
 
   if (invoice.clientAddress) {
-    const addressLines = doc.splitTextToSize(invoice.clientAddress, 75);
-    doc.text(addressLines, 14, clientY);
+    const addressLines = doc.splitTextToSize(invoice.clientAddress, 70);
+    doc.text(addressLines.slice(0, 3), 20, clientY);
   }
 
-  doc.setTextColor(gray);
-  doc.text("Dari:", 125, 84);
+  let companyY = boxY + 26;
 
-  doc.setTextColor(navy);
-  doc.setFontSize(12);
-  doc.text(settings.companyName, 125, 93);
+  if (settings.email) {
+    doc.text(settings.email, 116, companyY);
+    companyY += 6;
+  }
 
-  doc.setFontSize(10);
-  doc.setTextColor(gray);
-  doc.text(settings.email, 125, 101);
-  doc.text(settings.phone, 125, 109);
-  doc.text(settings.address, 125, 117);
+  if (settings.phone) {
+    doc.text(settings.phone, 116, companyY);
+    companyY += 6;
+  }
 
-  let y = 135;
+  if (settings.address) {
+    const companyAddressLines = doc.splitTextToSize(settings.address, 70);
+    doc.text(companyAddressLines.slice(0, 3), 116, companyY);
+  }
+
+  // TABLE HEADER
+  let y = 154;
 
   doc.setFillColor(navy);
-  doc.rect(14, y, 182, 10, "F");
+  doc.roundedRect(14, y, 182, 10, 2, 2, "F");
 
   doc.setTextColor("#FFFFFF");
-  doc.setFontSize(10);
-  doc.text("Deskripsi", 18, y + 7);
-  doc.text("Qty", 110, y + 7);
-  doc.text("Harga", 130, y + 7);
-  doc.text("Total", 168, y + 7);
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
+  doc.text("Deskripsi", 20, y + 7);
+  doc.text("Qty", 112, y + 7);
+  doc.text("Harga", 132, y + 7);
+  doc.text("Total", 170, y + 7);
 
-  y += 16;
+  y += 15;
 
-  doc.setTextColor("#1F2937");
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(text);
 
-  invoice.items.forEach((item) => {
+  invoice.items.forEach((item, index) => {
+    const rowHeight = 12;
     const total = Number(item.quantity) * Number(item.unitPrice);
 
-    doc.text(item.description || "-", 18, y);
-    doc.text(String(item.quantity), 112, y);
-    doc.text(formatRupiah(item.unitPrice), 130, y);
-    doc.text(formatRupiah(total), 168, y);
+    if (index % 2 === 0) {
+      doc.setFillColor("#FAFAFA");
+      doc.rect(14, y - 7, 182, rowHeight, "F");
+    }
 
-    y += 10;
+    const descriptionLines = doc.splitTextToSize(item.description || "-", 85);
+
+    doc.setTextColor(text);
+    doc.setFontSize(9);
+    doc.text(descriptionLines.slice(0, 2), 20, y);
+
+    doc.text(String(item.quantity || 1), 114, y);
+    doc.text(formatRupiah(item.unitPrice), 132, y);
+    doc.text(formatRupiah(total), 170, y);
+
+    y += rowHeight;
   });
 
+  // SUMMARY
   y += 8;
 
-  doc.setDrawColor("#E5E7EB");
-  doc.line(14, y, 196, y);
+  const summaryX = 118;
+  const summaryW = 78;
 
-  y += 12;
+  doc.setDrawColor(border);
+  doc.setFillColor("#FFFFFF");
+  doc.roundedRect(summaryX, y, summaryW, 36, 3, 3, "FD");
 
-  doc.setTextColor(navy);
-  doc.text("Subtotal", 130, y);
-  doc.text(formatRupiah(invoice.subtotal), 168, y);
+  doc.setTextColor(gray);
+  doc.setFontSize(9);
+  doc.text("Subtotal", summaryX + 6, y + 9);
+  doc.text(formatRupiah(invoice.subtotal), summaryX + 42, y + 9);
 
-  y += 8;
-
-  doc.text(`${invoice.taxLabel} ${invoice.taxRate}%`, 130, y);
-  doc.text(formatRupiah(invoice.taxAmount), 168, y);
-
-  y += 10;
+  doc.text(
+    `${invoice.taxLabel || settings.taxLabel} ${invoice.taxRate || settings.taxRate}%`,
+    summaryX + 6,
+    y + 18
+  );
+  doc.text(formatRupiah(invoice.taxAmount), summaryX + 42, y + 18);
 
   doc.setFillColor(gold);
-  doc.rect(125, y - 6, 71, 12, "F");
+  doc.roundedRect(summaryX + 4, y + 23, summaryW - 8, 10, 2, 2, "F");
+
+  doc.setTextColor(navy);
+  doc.setFont("helvetica", "bold");
+  doc.text("Grand Total", summaryX + 7, y + 30);
+  doc.text(formatRupiah(invoice.grandTotal), summaryX + 42, y + 30);
+
+  // PAYMENT
+  const paymentY = y + 48;
 
   doc.setTextColor(navy);
   doc.setFontSize(11);
-  doc.text("Grand Total", 130, y + 2);
-  doc.text(formatRupiah(invoice.grandTotal), 168, y + 2);
+  doc.setFont("helvetica", "bold");
+  doc.text("Informasi Pembayaran", 14, paymentY);
 
-  y += 24;
+  doc.setTextColor(text);
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Bank: ${settings.bankName || "-"}`, 14, paymentY + 8);
+  doc.text(`No. Rekening: ${settings.bankAccount || "-"}`, 14, paymentY + 15);
+  doc.text(`Atas Nama: ${settings.bankHolder || "-"}`, 14, paymentY + 22);
 
-  doc.setTextColor(navy);
-  doc.setFontSize(12);
-  doc.text("Informasi Pembayaran", 14, y);
+  // NOTES
+  const notesY = paymentY + 38;
 
-  y += 9;
-
-  doc.setFontSize(10);
-  doc.setTextColor("#1F2937");
-  doc.text(`Bank: ${settings.bankName}`, 14, y);
-  doc.text(`No. Rekening: ${settings.bankAccount}`, 14, y + 8);
-  doc.text(`Atas Nama: ${settings.bankHolder}`, 14, y + 16);
-
-  y += 34;
+  doc.setFillColor(lightGray);
+  doc.roundedRect(14, notesY, 182, 24, 3, 3, "F");
 
   doc.setTextColor(gray);
-  doc.text(`Catatan: ${invoice.notes || settings.footerNote}`, 14, y);
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
+  doc.text("Catatan", 20, notesY + 8);
 
+  doc.setFont("helvetica", "normal");
+  const noteLines = doc.splitTextToSize(
+    invoice.notes || settings.footerNote || "Terima kasih atas kepercayaan Anda.",
+    168
+  );
+  doc.text(noteLines.slice(0, 2), 20, notesY + 16);
+
+  // FOOTER
   doc.setFillColor(navy);
   doc.rect(0, 282, 210, 15, "F");
 
   doc.setTextColor("#FFFFFF");
-  doc.setFontSize(9);
-  doc.text(settings.footerNote, 14, 291);
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  doc.text(settings.footerNote || "Terima kasih atas kepercayaan Anda.", 14, 291);
 
   doc.save(`${invoice.invoiceNumber}.pdf`);
 }

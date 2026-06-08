@@ -5,6 +5,7 @@ import {
   getSettings,
   updateInvoice,
 } from "../utils/storage";
+import toast from "react-hot-toast";
 
 function EditInvoice() {
   const { invoiceNumber } = useParams();
@@ -18,15 +19,23 @@ function EditInvoice() {
   if (!savedInvoice) {
     return (
       <div>
-        <h1>Invoice tidak ditemukan</h1>
-        <Link to="/history">Kembali ke Riwayat</Link>
+        <section className="page-hero compact">
+          <span className="eyebrow">Edit Invoice</span>
+          <h1>Invoice tidak ditemukan</h1>
+          <p>Data invoice yang ingin diedit tidak tersedia.</p>
+        </section>
+
+        <Link className="link-btn" to="/history">
+          Kembali ke Riwayat
+        </Link>
       </div>
     );
   }
 
-  const subtotal = invoice.items.reduce((sum, item) => {
-    return sum + Number(item.quantity) * Number(item.unitPrice);
-  }, 0);
+  const subtotal = invoice.items.reduce(
+    (sum, item) => sum + Number(item.quantity) * Number(item.unitPrice),
+    0
+  );
 
   const taxAmount = subtotal * (Number(settings.taxRate) / 100);
   const grandTotal = subtotal + taxAmount;
@@ -40,11 +49,7 @@ function EditInvoice() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-
-    setInvoice({
-      ...invoice,
-      [name]: value,
-    });
+    setInvoice({ ...invoice, [name]: value });
   };
 
   const handleItemChange = (index, field, value) => {
@@ -53,23 +58,13 @@ function EditInvoice() {
     updatedItems[index][field] =
       field === "quantity" || field === "unitPrice" ? Number(value) : value;
 
-    setInvoice({
-      ...invoice,
-      items: updatedItems,
-    });
+    setInvoice({ ...invoice, items: updatedItems });
   };
 
   const addItem = () => {
     setInvoice({
       ...invoice,
-      items: [
-        ...invoice.items,
-        {
-          description: "",
-          quantity: 1,
-          unitPrice: 0,
-        },
-      ],
+      items: [...invoice.items, { description: "", quantity: 1, unitPrice: 0 }],
     });
   };
 
@@ -97,16 +92,51 @@ function EditInvoice() {
     };
 
     updateInvoice(finalInvoice);
-    alert("Invoice berhasil diperbarui!");
+    toast.success("Invoice berhasil diperbarui!");
     navigate(`/invoice/${invoice.invoiceNumber}`);
   };
 
   return (
     <div>
-      <h1>Edit Invoice</h1>
-      <p className="subtitle">{invoice.invoiceNumber}</p>
+      <section className="page-hero compact">
+        <div>
+          <span className="eyebrow">Edit Invoice</span>
+          <h1>Perbarui detail invoice.</h1>
+          <p>
+            Ubah data klien, item jasa, status pembayaran, tanggal jatuh tempo,
+            dan catatan sebelum invoice dikirim ulang.
+          </p>
+        </div>
+      </section>
 
-      <form className="form-card wide" onSubmit={handleSubmit}>
+      <div className="create-layout">
+        <div className="side-summary edit-total-card">
+          <span>Grand Total Saat Ini</span>
+          <strong>{formatRupiah(grandTotal)}</strong>
+          <p>{invoice.items.length} item jasa</p>
+
+          <div className="mini-summary">
+            <div>
+              <span>Subtotal</span>
+              <b>{formatRupiah(subtotal)}</b>
+            </div>
+            <div>
+              <span>
+                {settings.taxLabel} {settings.taxRate}%
+              </span>
+              <b>{formatRupiah(taxAmount)}</b>
+            </div>
+          </div>
+        </div>
+
+        <div className="side-summary invoice-meta-card">
+          <span>Nomor Invoice</span>
+          <strong>{invoice.invoiceNumber}</strong>
+          <p>Status saat ini: {invoice.status}</p>
+        </div>
+      </div>
+
+      <form className="form-card wide modern-form" onSubmit={handleSubmit}>
         <h2>Informasi Invoice</h2>
 
         <div className="grid-2">
@@ -156,35 +186,45 @@ function EditInvoice() {
 
         <h2>Data Klien</h2>
 
-        <label>Nama Klien</label>
-        <input
-          name="clientName"
-          value={invoice.clientName}
-          onChange={handleChange}
-          required
-        />
+        <div className="grid-2">
+          <div>
+            <label>Nama Klien</label>
+            <input
+              name="clientName"
+              value={invoice.clientName}
+              onChange={handleChange}
+              required
+            />
+          </div>
 
-        <label>Email Klien</label>
-        <input
-          type="email"
-          name="clientEmail"
-          value={invoice.clientEmail}
-          onChange={handleChange}
-        />
+          <div>
+            <label>Email Klien</label>
+            <input
+              type="email"
+              name="clientEmail"
+              value={invoice.clientEmail}
+              onChange={handleChange}
+            />
+          </div>
 
-        <label>Telepon / WhatsApp Klien</label>
-        <input
-          name="clientPhone"
-          value={invoice.clientPhone || ""}
-          onChange={handleChange}
-        />
+          <div>
+            <label>Telepon / WhatsApp Klien</label>
+            <input
+              name="clientPhone"
+              value={invoice.clientPhone || ""}
+              onChange={handleChange}
+            />
+          </div>
 
-        <label>Alamat Klien</label>
-        <textarea
-          name="clientAddress"
-          value={invoice.clientAddress}
-          onChange={handleChange}
-        />
+          <div>
+            <label>Alamat Klien</label>
+            <textarea
+              name="clientAddress"
+              value={invoice.clientAddress || ""}
+              onChange={handleChange}
+            />
+          </div>
+        </div>
 
         <h2>Item Jasa</h2>
 

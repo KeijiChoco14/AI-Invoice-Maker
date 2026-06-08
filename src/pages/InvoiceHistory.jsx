@@ -9,26 +9,66 @@ import {
 } from "../utils/storage";
 import { generateInvoicePDF } from "../utils/pdfGenerator";
 import { Link, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import ConfirmModal from "../components/ConfirmModal";
+import { shareInvoiceToWhatsApp } from "../utils/whatsapp";
 
 function InvoiceHistory() {
   const [search, setSearch] = useState("");
   const [invoices, setInvoices] = useState(syncOverdueInvoices());
-  const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState("All");
+  const [modal, setModal] = useState({
+    open: false,
+    type: null,
+    invoiceNumber: null,
+    file: null,
+  });
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+
+  const navigate = useNavigate();
+
+  const closeModal = () => {
+    setModal({
+      open: false,
+      type: null,
+      invoiceNumber: null,
+      file: null,
+    });
+  };
+
+  const handleConfirmModal = async () => {
+    if (modal.type === "delete") {
+      deleteInvoice(modal.invoiceNumber);
+      setInvoices(syncOverdueInvoices());
+      toast.success("Invoice berhasil dihapus.");
+      closeModal();
+      return;
+    }
+
+    if (modal.type === "import") {
+      try {
+        const result = await importInvoicesFromJSON(modal.file);
+        setInvoices(syncOverdueInvoices());
+        toast.success(result.message);
+      } catch (error) {
+        toast.error(error.message);
+      }
+
+      closeModal();
+    }
+  };
 
   const handleImportJSON = (e) => {
     const file = e.target.files[0];
 
     if (!file) return;
 
-    const confirmImport = window.confirm(
-      "Import backup akan mengganti data invoice dan pengaturan saat ini. Lanjutkan?",
-    );
-
-    if (!confirmImport) return;
-
-    importInvoicesFromJSON(file, () => {
-      setInvoices(syncOverdueInvoices());
+    setModal({
+      open: true,
+      type: "import",
+      invoiceNumber: null,
+      file,
     });
 
     e.target.value = "";
@@ -38,23 +78,22 @@ function InvoiceHistory() {
     const duplicated = duplicateInvoice(invoiceNumber);
 
     if (!duplicated) {
-      alert("Invoice gagal diduplikasi.");
+      toast.error("Invoice gagal diduplikasi.");
       return;
     }
 
     setInvoices(syncOverdueInvoices());
+    toast.success("Invoice berhasil diduplikasi.");
     navigate(`/invoice/${duplicated.invoiceNumber}/edit`);
   };
 
   const handleDeleteInvoice = (invoiceNumber) => {
-    const confirmDelete = window.confirm(
-      `Yakin ingin menghapus invoice ${invoiceNumber}?`,
-    );
-
-    if (!confirmDelete) return;
-
-    deleteInvoice(invoiceNumber);
-    setInvoices(syncOverdueInvoices());
+    setModal({
+      open: true,
+      type: "delete",
+      invoiceNumber,
+      file: null,
+    });
   };
 
   const formatRupiah = (number) =>
@@ -67,6 +106,7 @@ function InvoiceHistory() {
   const handleStatusChange = (invoiceNumber, newStatus) => {
     updateInvoiceStatus(invoiceNumber, newStatus);
     setInvoices(syncOverdueInvoices());
+    toast.success("Status invoice berhasil diperbarui.");
   };
 
   const filteredInvoices = invoices.filter((invoice) => {
@@ -80,22 +120,60 @@ function InvoiceHistory() {
     const matchesStatus =
       statusFilter === "All" || invoice.status === statusFilter;
 
-    return matchesSearch && matchesStatus;
+    const invoiceDate = invoice.invoiceDate || "";
+
+    const matchesDateFrom = !dateFrom || invoiceDate >= dateFrom;
+    const matchesDateTo = !dateTo || invoiceDate <= dateTo;
+
+    return matchesSearch && matchesStatus && matchesDateFrom && matchesDateTo;
   });
 
   return (
     <div>
-      <h1>Riwayat Invoice</h1>
-      <p className="subtitle">
-        Cari invoice, ubah status pembayaran, dan download ulang PDF.
-      </p>
+      <section className="page-hero compact">
+        <div>
+          <span className="eyebrow">Invoice Records</span>
+          <h1>Riwayat Invoice</h1>
+          <p>
+            Cari, filter, download PDF, duplicate, import/export backup, dan
+            kelola status pembayaran invoice.
+          </p>
+        </div>
+      </section>
 
-      <div className="history-toolbar">
+      <div className="history-toolbar modern-toolbar">
         <input
           placeholder="Cari invoice..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
+
+        <input
+          type="date"
+          value={dateFrom}
+          onChange={(e) => setDateFrom(e.target.value)}
+          title="Tanggal mulai"
+        />
+
+        <input
+          type="date"
+          value={dateTo}
+          onChange={(e) => setDateTo(e.target.value)}
+          title="Tanggal akhir"
+        />
+
+        <button
+          type="button"
+          className="small-btn"
+          onClick={() => {
+            setSearch("");
+            setStatusFilter("All");
+            setDateFrom("");
+            setDateTo("");
+          }}
+        >
+          Reset
+        </button>
 
         <select
           value={statusFilter}
@@ -111,7 +189,10 @@ function InvoiceHistory() {
         <button
           type="button"
           className="export-btn"
-          onClick={exportInvoicesToJSON}
+          onClick={() => {
+            exportInvoicesToJSON();
+            toast.success("Backup JSON berhasil diunduh.");
+          }}
         >
           Export JSON
         </button>
@@ -127,7 +208,7 @@ function InvoiceHistory() {
         </label>
       </div>
 
-      <div className="table-card">
+      <div className="table-card modern-table elevated">
         <table>
           <thead>
             <tr>
@@ -184,6 +265,13 @@ function InvoiceHistory() {
                       </Link>
 
                       <button
+                        className="small-btn whatsapp-small"
+                        onClick={() => shareInvoiceToWhatsApp(invoice)}
+                      >
+                        WhatsApp
+                      </button>
+
+                      <button
                         className="small-btn"
                         onClick={() => generateInvoicePDF(invoice)}
                       >
@@ -213,14 +301,43 @@ function InvoiceHistory() {
               ))
             ) : (
               <tr>
-                <td colSpan="7" className="empty-table">
-                  Belum ada invoice yang cocok.
+                <td colSpan="7">
+                  <div className="empty-state">
+                    <div className="empty-state-card">
+                      <div className="empty-state-icon">INV</div>
+                      <h3>Invoice tidak ditemukan</h3>
+                      <p>
+                        Belum ada invoice yang sesuai dengan pencarian atau
+                        filter status. Coba ubah keyword, pilih semua status,
+                        atau buat invoice baru.
+                      </p>
+                      <Link to="/create" className="primary-action">
+                        + Buat Invoice Baru
+                      </Link>
+                    </div>
+                  </div>
                 </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
+
+      <ConfirmModal
+        open={modal.open}
+        title={
+          modal.type === "delete" ? "Hapus Invoice?" : "Import Backup JSON?"
+        }
+        message={
+          modal.type === "delete"
+            ? `Invoice ${modal.invoiceNumber} akan dihapus permanen dari browser ini.`
+            : "Import backup akan mengganti data invoice dan pengaturan saat ini."
+        }
+        confirmText={modal.type === "delete" ? "Hapus" : "Import"}
+        danger={modal.type === "delete"}
+        onConfirm={handleConfirmModal}
+        onCancel={closeModal}
+      />
     </div>
   );
 }

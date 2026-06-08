@@ -1,15 +1,15 @@
 export const defaultSettings = {
-  companyName: "Nama Brand Kamu",
+  companyName: "Alamak",
   tagline: "Automation, Web Development & IT Support",
   address: "Pekanbaru, Riau",
-  email: "email@brandkamu.com",
-  phone: "08xxxxxxxxxx",
+  email: "hralamak@alamak.com",
+  phone: "08127612833",
   taxLabel: "PPN",
   taxRate: 11,
   invoicePrefix: "INV",
   bankName: "BCA",
-  bankAccount: "1234567890",
-  bankHolder: "Nama Pemilik Rekening",
+  bankAccount: "821534795",
+  bankHolder: "Albert Christian",
   footerNote: "Terima kasih atas kepercayaan Anda.",
 };
 
@@ -61,9 +61,7 @@ export function deleteInvoice(invoiceNumber) {
 export function getInvoiceByNumber(invoiceNumber) {
   const invoices = getInvoices();
 
-  return invoices.find(
-    (invoice) => invoice.invoiceNumber === invoiceNumber
-  );
+  return invoices.find((invoice) => invoice.invoiceNumber === invoiceNumber);
 }
 
 export function updateInvoice(updatedInvoice) {
@@ -162,31 +160,38 @@ export function exportInvoicesToJSON() {
   URL.revokeObjectURL(url);
 }
 
-export function importInvoicesFromJSON(file, callback) {
-  const reader = new FileReader();
+export function importInvoicesFromJSON(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
 
-  reader.onload = (event) => {
-    try {
-      const data = JSON.parse(event.target.result);
+    reader.onload = (event) => {
+      try {
+        const data = JSON.parse(event.target.result);
 
-      if (!data.invoices || !Array.isArray(data.invoices)) {
-        alert("File backup tidak valid.");
-        return;
+        if (!data.invoices || !Array.isArray(data.invoices)) {
+          reject(new Error("File backup tidak valid."));
+          return;
+        }
+
+        if (data.settings) {
+          localStorage.setItem("invoice_settings", JSON.stringify(data.settings));
+        }
+
+        localStorage.setItem("invoices", JSON.stringify(data.invoices));
+
+        resolve({
+          success: true,
+          message: "Data backup berhasil di-import.",
+        });
+      } catch {
+        reject(new Error("Gagal membaca file JSON."));
       }
+    };
 
-      if (data.settings) {
-        localStorage.setItem("invoice_settings", JSON.stringify(data.settings));
-      }
+    reader.onerror = () => {
+      reject(new Error("Gagal memproses file."));
+    };
 
-      localStorage.setItem("invoices", JSON.stringify(data.invoices));
-
-      alert("Data backup berhasil di-import!");
-
-      if (callback) callback();
-    } catch (error) {
-      alert("Gagal membaca file JSON.");
-    }
-  };
-
-  reader.readAsText(file);
+    reader.readAsText(file);
+  });
 }
